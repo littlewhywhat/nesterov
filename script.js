@@ -145,7 +145,7 @@ function Circles(s) {
         DISTANCE = 5,
         instance = this,
         sw = new Switch(this, images),
-        indicator = new Indicator(this);
+        animator;
     this.init = function() {     
         g(GID);
         return this;
@@ -155,6 +155,11 @@ function Circles(s) {
         var g = getGById(GID);
         for (var i in IMAGE_IDS) 
             g.append(drawCircle(0, 0, IMAGE_IDS[i]));
+        animator = new Animator(instance.selectSet(),{
+                    r: 0
+                }, {
+                    r: RADIUS
+                });
         return this;
     }
 
@@ -198,43 +203,38 @@ function Circles(s) {
         return this;
     }
 
-    function Indicator(circles) {
+    function Animator(elements, to, from) {
 
         this.start = function() {
-            startAnimate(500);
+            start(500);
         }
 
         this.stop = function() {
-            stopAnimate(500);
+            stop(500);
         }
 
-        function startAnimate(interval) {
-            circles.selectSet().forEach(function(circle) {
-                animateCircle(circle, interval, true);
+        function start(interval) {
+            elements.forEach(function(element) {
+                animate(element, interval);
             });
         }
 
-        function stopAnimate(interval) {
-            circles.selectSet().forEach(function(circle) {
-                circle.stop();
-                animateCircle(circle, interval);
+        function stop(interval) {
+            elements.forEach(function(element) {
+                element.stop();
             });
+            elements.animate(from, interval, mina.easein);
         }
 
-        function animateCircle(circle, interval, isendless) {
-            circle.animate({ 
-                r: 0
-            }, interval, mina.easein, 
+        function animate(element, interval) {
+            element.animate(to, interval, mina.easein, 
             function() {
-                circle.animate({
-                    r: RADIUS
-                }, interval, mina.easein, isendless?
-                function() {
-                    animateCircle(circle, interval, isendless);
-                } : null);
+                element.animate(from, interval, mina.easein, 
+                    function() {
+                        animate(element, interval);
+                });
             });
         }
-        return this;
     }   
 
     function drawCircle(cx, cy, id) {
@@ -290,11 +290,11 @@ function Circles(s) {
     this.asIndicator = function() {
         sw.stop();
         move(width/2, height/2, 500);
-        indicator.start();
+        animator.start();
     }
 
     this.asSwitch = function() {
-        indicator.stop();
+        animator.stop();
         moveDown(500)
         sw.start();
     }
