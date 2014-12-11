@@ -18,7 +18,7 @@ var interval = 500;
 var loading = true;
 
 var images;
-function Images(s, IMAGE_IDS) {
+function Images(s, g, IMAGE_IDS) {
     var IMAGE_TAG = "image",
         instance = this;
     this.init = function() {
@@ -67,7 +67,7 @@ function Images(s, IMAGE_IDS) {
         var selected = instance.selected();
         if (selected)
             toggleSelected(selected);
-        getCover().before(image);
+        g.append(image);
         toggleSelected(image);
     }   
 
@@ -117,7 +117,11 @@ function load(IMAGE_IDS, time) {
         }, { 
             time: time,
             todo: function(IMAGE_IDS, time) {
-                images = new Images(s, IMAGE_IDS).init();
+                var g = s.g().attr({
+                                id: "images"
+                             });
+                getCover().before(g);
+                images = new Images(s, g, IMAGE_IDS).init();
             },
             args: IMAGE_IDS,
     }]);
