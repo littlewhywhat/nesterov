@@ -31,7 +31,7 @@ function Images(s, IMAGE_IDS) {
     function createImage(image, interval) {
         var image = drawImage(image);
         adjustImage(image, width, height);
-        instance.selectImage(image);
+        selectImage(image);
     }
 
     function drawImage(image) {
@@ -63,8 +63,8 @@ function Images(s, IMAGE_IDS) {
         })
     }
 
-    this.selectImage = function(image) {
-        var selected = instance.getSelectedImage();
+    function selectImage(image) {
+        var selected = instance.selected();
         if (selected)
             toggleSelected(selected);
         getCover().before(image);
@@ -79,16 +79,16 @@ function Images(s, IMAGE_IDS) {
         return s.selectAll(IMAGE_TAG);
     }
 
-    this.getImageById = function(id) {
+    function getImageById(id) {
         return s.select(IMAGE_TAG + formId(id));
     }
 
-    this.getSelectedImage = function() {
+    this.selected = function() {
         return s.select(IMAGE_TAG + cssClass(SELECTED_CLASS));
     }
 
-    this.selectImageById = function(id) {
-        instance.selectImage(instance.getImageById(id));
+    this.selectById = function(id) {
+        selectImage(getImageById(id));
     }
 }
 
@@ -245,13 +245,13 @@ function relateCircles() {
             selectByCircle(this); 
         }, function() {});
    });
-   var selectedId = images.getSelectedImage().attr('id');
+   var selectedId = images.selected().attr('id');
    selectCircle(getCircleById(selectedId));
 }
 
 function selectByCircle(circle) {
     selectCircle(circle);
-    images.selectImageById(circle.attr('id'));
+    images.selectById(circle.attr('id'));
 }
 
 function placeCirclesDown(height, width, interval) {
