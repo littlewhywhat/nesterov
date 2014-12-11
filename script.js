@@ -15,7 +15,6 @@ var SVG_ID = "content",
 var s = Snap(formId(SVG_ID));
 var interval = 500;
     imageInterval = 4000;
-var loading = true;
 
 var images;
 function Images(s, g, IMAGE_IDS) {
@@ -95,7 +94,6 @@ function Images(s, g, IMAGE_IDS) {
 doInARow([{
     time: interval,
     todo: function(interval) {
-        loading = false;
         relateCircles();
     }
 }, { 
