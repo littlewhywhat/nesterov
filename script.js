@@ -1,10 +1,5 @@
 var SVG_ID = "content",
-    INDICATOR_ID = "indicator",
-    CIRCLE_TAG = "circle",
     SELECTED_CLASS = "selected",
-    BUTTON_COUNT = 3,
-    BUTTON_RADIUS = 10,
-    BUTTON_DISTANCE = 5,
     height = document.body.clientHeight,
     width = document.body.clientWidth,
     IMAGE_IDS = ["zero", "one", "two"];
@@ -15,6 +10,7 @@ var interval = 500;
 
 var images;
 var cover;
+var circles;
 function Images(s, g, IMAGE_IDS) {
     var IMAGE_TAG = "image",
         instance = this;
@@ -131,10 +127,123 @@ function Cover(s) {
     }
 }
 
+function Circles(s) {
+    var CIRCLE_TAG = "circle",
+        CIRCLES_ID = "circles",
+        BUTTON_COUNT = 3,
+        BUTTON_RADIUS = 10,
+        BUTTON_DISTANCE = 5,
+        instance = this;
+    this.init = function() {
+        for (var i in IMAGE_IDS) 
+            drawCircle(0, 0, IMAGE_IDS[i]);
+        s.g(getCircleSet()).attr({
+                            id: CIRCLES_ID
+                        });
+        return this;
+    }
+
+    function drawCircle(cx, cy, id) {
+        s.circle(cx, cy, BUTTON_RADIUS).attr({
+            fill: "white",
+            id: id,
+            stroke: "black",
+            strokeWidth: 2
+        })  
+    }
+
+    this.placeCirclesDown = function(height, width, interval) {
+        instance.placeCircles(
+            width/2, 
+            height - BUTTON_RADIUS - BUTTON_DISTANCE,
+            interval
+            );
+    }
+
+    this.placeCircles = function(x, y, interval) {
+        var set = getCircleSet();
+            count = set.length;
+        var cx = x - BUTTON_RADIUS - 
+            count * BUTTON_RADIUS
+           + Math.round(count/2 - 0.1) 
+           * BUTTON_DISTANCE;
+        var cy = y;
+        set.forEach(function(circle) {
+            circle.animate({
+                cx: cx,
+                cy: cy
+            }, interval);
+            cx += BUTTON_RADIUS * 2 + BUTTON_DISTANCE;
+        })
+    }
+
+    this.relateCircles = function() {
+       getCircleSet().forEach(function(circle){
+            circle.hover(function() {
+                selectByCircle(this); 
+            }, function() {});
+       });
+       var selectedId = images.selected().attr('id');
+       selectCircle(getCircleById(selectedId));
+    }
+
+    this.startAnimate = function(interval) {
+        getCircleSet().forEach(function(circle) {
+            animateCircle(circle, interval, true);
+        });
+    }
+
+    this.stopAnimate = function(interval) {
+        getCircleSet().forEach(function(circle) {
+            circle.stop();
+            animateCircle(circle, interval);
+        })
+    }
+
+    function getCircleSet() {
+        return s.selectAll(CIRCLE_TAG);
+    }
+
+    function getCircleById(id) {
+        return s.select(CIRCLE_TAG + formId(id));
+    }
+
+    function getSelectedCircle() {
+        return s.select(CIRCLE_TAG + cssClass(SELECTED_CLASS));
+    }
+
+    function selectByCircle(circle) {
+        selectCircle(circle);
+        images.selectById(circle.attr('id'));
+    }
+
+    function animateCircle(circle, interval, isendless) {
+        circle.animate({ 
+            r: 0
+        }, interval, mina.easein, 
+        function() {
+            circle.animate({
+                r: BUTTON_RADIUS
+            }, interval, mina.easein, isendless?
+            function() {
+                animateCircle(circle, interval, isendless);
+            } : null);
+        });
+    }
+
+    function selectCircle(circle) {
+        var selected = getSelectedCircle();
+        if (selected)
+            toggleSelected(selected);
+        toggleSelected(circle);
+    }
+
+}
+
 doInARow([{
     time: interval,
     todo: function(interval) {
-        relateCircles();
+        circles.relateCircles();
     }
 }, { 
     time: interval, 
@@ -148,10 +257,10 @@ doInARow([{
 }]);
 
 function load(IMAGE_IDS, time) {
-    startAnimate(500);
+    circles.startAnimate(500);
     doInARow([{ 
             time: 0, 
-            todo: stopAnimate
+            todo: circles.stopAnimate
         }, { 
             time: time,
             todo: function(IMAGE_IDS, time) {
@@ -181,62 +290,13 @@ function doInARow(callbacks) {
 
 function hide(interval) {
     cover = new Cover(s).init();
-    for (var i in IMAGE_IDS) 
-        drawCircle(0, 0, IMAGE_IDS[i]);
-    var indicator = s.g(getCircleSet())
-                     .attr({
-                        id: INDICATOR_ID
-                     });
-    
-    placeCircles(width/2, height/2, interval - 100);
+    circles = new Circles(s).init();    
+    circles.placeCircles(width/2, height/2, interval - 100);
 }
 
 function unhide(interval) {
     cover.open();
-    placeCirclesDown(height, width, interval);
-}
-
-function startAnimate(interval) {
-    getCircleSet().forEach(function(circle) {
-        animateCircle(circle, interval, true);
-    });
-}
-
-function stopAnimate(interval) {
-    getCircleSet().forEach(function(circle) {
-        circle.stop();
-        animateCircle(circle, interval);
-    })
-}
-
-function animateCircle(circle, interval, isendless) {
-    circle.animate({ 
-        r: 0
-    }, interval, mina.easein, 
-    function() {
-        circle.animate({
-            r: BUTTON_RADIUS
-        }, interval, mina.easein, isendless?
-        function() {
-            animateCircle(circle, interval, isendless);
-        } : null);
-    });
-}
-
-function getIndicator() {
-    return s.select(formId(INDICATOR_ID));
-}
-
-function getCircleSet() {
-    return s.selectAll(CIRCLE_TAG);
-}
-
-function getCircleById(id) {
-    return s.select(CIRCLE_TAG + formId(id));
-}
-
-function getSelectedCircle() {
-    return s.select(CIRCLE_TAG + cssClass(SELECTED_CLASS));
+    circles.placeCirclesDown(height, width, interval);
 }
 
 function formId(id) {
@@ -251,62 +311,6 @@ function toggleSelected(element) {
     element.toggleClass(SELECTED_CLASS);
 }
 
-function selectCircle(circle) {
-    var selected = getSelectedCircle();
-    if (selected)
-        toggleSelected(selected);
-    toggleSelected(circle);
-}
-
-function drawCircle(cx, cy, id) {
-    s.circle(cx, cy, BUTTON_RADIUS).attr({
-        fill: "white",
-        id: id,
-        stroke: "black",
-        strokeWidth: 2
-    })  
-}
-
-function relateCircles() {
-   getCircleSet().forEach(function(circle){
-        circle.hover(function() {
-            selectByCircle(this); 
-        }, function() {});
-   });
-   var selectedId = images.selected().attr('id');
-   selectCircle(getCircleById(selectedId));
-}
-
-function selectByCircle(circle) {
-    selectCircle(circle);
-    images.selectById(circle.attr('id'));
-}
-
-function placeCirclesDown(height, width, interval) {
-    placeCircles(
-        width/2, 
-        height - BUTTON_RADIUS - BUTTON_DISTANCE,
-        interval
-        );
-}
-
-function placeCircles(x, y, interval) {
-    var set = getCircleSet();
-        count = set.length;
-    var cx = x - BUTTON_RADIUS - 
-        count * BUTTON_RADIUS
-       + Math.round(count/2 - 0.1) 
-       * BUTTON_DISTANCE;
-    var cy = y;
-    set.forEach(function(circle) {
-        circle.animate({
-            cx: cx,
-            cy: cy
-        }, interval);
-        cx += BUTTON_RADIUS * 2 + BUTTON_DISTANCE;
-    })
-}
-
 var startMillis;
 var timerId;
 
@@ -318,7 +322,7 @@ document.body.onresize = function() {
     cover.adjust();
     cover.close();
 
-    placeCircles(width/2, height/2, 500);
+    circles.placeCircles(width/2, height/2, 500);
     
     var currentMillis = new Date().getTime();
     if ((currentMillis - startMillis) < 300)
@@ -326,7 +330,7 @@ document.body.onresize = function() {
     timerId = setTimeout(function() {
         cover.open();
         images.adjust();
-        placeCirclesDown(height, width, 500);
+        circles.placeCirclesDown(height, width, 500);
     }, 1000);
     startMillis = currentMillis;
 }
