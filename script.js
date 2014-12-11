@@ -1,6 +1,5 @@
 var SVG_ID = "content",
     INDICATOR_ID = "indicator",
-    COVER_ID = "cover",
     CIRCLE_TAG = "circle",
     SELECTED_CLASS = "selected",
     BUTTON_COUNT = 3,
@@ -8,8 +7,6 @@ var SVG_ID = "content",
     BUTTON_DISTANCE = 5,
     height = document.body.clientHeight,
     width = document.body.clientWidth,
-    minwidth = 1920,
-    minheight = 966,
     IMAGE_IDS = ["zero", "one", "two"];
 
 var s = Snap(formId(SVG_ID));
@@ -17,6 +14,7 @@ var interval = 500;
     imageInterval = 4000;
 
 var images;
+var cover;
 function Images(s, g, IMAGE_IDS) {
     var IMAGE_TAG = "image",
         instance = this;
@@ -91,6 +89,48 @@ function Images(s, g, IMAGE_IDS) {
     }
 }
 
+function Cover(s) {
+    var COVER_ID = "cover";
+    this.init = function() {
+        drawCover(width + 100, height + 100);
+        return this;
+    }
+
+    function getCover() {
+        return s.select(formId(COVER_ID));
+    }
+
+    this.open = function() {
+        getCover().animate({
+            opacity: 0
+        }, 500);
+    }
+
+    this.close = function() {
+        getCover().attr({
+            opacity: 1
+        });
+    }
+
+    this.adjust = function() {
+        getCover().attr({
+            width: width + 100,
+            height: height + 100
+        });
+    }
+
+    this.before = function(el) {
+        getCover().before(el);
+    }
+
+    function drawCover(width, height) {
+        return s.rect(0,0,width,height)
+                .attr({
+                    id: COVER_ID
+                });
+    }
+}
+
 doInARow([{
     time: interval,
     todo: function(interval) {
@@ -98,13 +138,13 @@ doInARow([{
     }
 }, { 
     time: interval, 
-    todo: uncover 
+    todo: unhide 
 }, { 
     time: imageInterval , 
     todo: load, args: IMAGE_IDS 
 }, { 
     time: interval, 
-    todo: cover
+    todo: hide
 }]);
 
 function load(IMAGE_IDS, time) {
@@ -118,7 +158,7 @@ function load(IMAGE_IDS, time) {
                 var g = s.g().attr({
                                 id: "images"
                              });
-                getCover().before(g);
+                cover.before(g);
                 images = new Images(s, g, IMAGE_IDS).init();
             },
             args: IMAGE_IDS,
@@ -139,7 +179,8 @@ function doInARow(callbacks) {
     }
 }
 
-function cover(interval) {
+function hide(interval) {
+    cover = new Cover(s).init();
     for (var i in IMAGE_IDS) 
         drawCircle(0, 0, IMAGE_IDS[i]);
     var indicator = s.g(getCircleSet())
@@ -147,15 +188,11 @@ function cover(interval) {
                         id: INDICATOR_ID
                      });
     
-    indicator.before(drawCover(width + 100, height + 100));
     placeCircles(width/2, height/2, interval - 100);
 }
 
-function uncover(interval) {
-    var cover = getCover();
-    cover.animate({
-        opacity: 0
-    }, 500);
+function unhide(interval) {
+    cover.open();
     placeCirclesDown(height, width, interval);
 }
 
@@ -184,10 +221,6 @@ function animateCircle(circle, interval, isendless) {
             animateCircle(circle, interval, isendless);
         } : null);
     });
-}
-
-function getCover() {
-    return s.select(formId(COVER_ID));
 }
 
 function getIndicator() {
@@ -223,13 +256,6 @@ function selectCircle(circle) {
     if (selected)
         toggleSelected(selected);
     toggleSelected(circle);
-}
-
-function drawCover(width, height) {
-    return s.rect(0,0,width,height)
-            .attr({
-                id: COVER_ID
-            });
 }
 
 function drawCircle(cx, cy, id) {
@@ -289,14 +315,8 @@ document.body.onresize = function() {
     width = document.body.clientWidth;
     
     
-    var cover = getCover();
-    cover.attr({
-        width: width + 100,
-        height: height + 100
-    });
-    cover.attr({
-        opacity: 1
-    });
+    cover.adjust();
+    cover.close();
 
     placeCircles(width/2, height/2, 500);
     
@@ -304,9 +324,7 @@ document.body.onresize = function() {
     if ((currentMillis - startMillis) < 300)
         clearTimeout(timerId);
     timerId = setTimeout(function() {
-        cover.attr({
-            opacity: 0
-        });
+        cover.open();
         images.adjust();
         placeCirclesDown(height, width, 500);
     }, 1000);
