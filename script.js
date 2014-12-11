@@ -132,7 +132,9 @@ function Circles(s) {
         CIRCLES_ID = "circles",
         BUTTON_RADIUS = 10,
         BUTTON_DISTANCE = 5,
-        instance = this;
+        instance = this,
+        sw = new Switch(this),
+        indicator = new Indicator(this);
     this.init = function() {
         for (var i in IMAGE_IDS) 
             drawCircle(0, 0, IMAGE_IDS[i]);
@@ -143,6 +145,83 @@ function Circles(s) {
         return this;
     }
 
+    function Switch(circles) {
+        function relateCircles() {
+           getCircleSet().forEach(function(circle){
+                circle.hover(hover);
+           });
+           var selectedId = images.selected().attr('id');
+           selectCircle(getCircleById(selectedId));
+        }
+
+        function unrelateCircles() {
+            getCircleSet().forEach(function(circle){
+                circle.unhover(hover);
+           });
+           var selected = getSelectedCircle();
+           if (selected)
+                selected.toggleClass(SELECTED_CLASS, false);
+        }
+
+        function hover() {
+            selectByCircle(this); 
+        }
+
+        function selectByCircle(circle) {
+            selectCircle(circle);
+            images.selectById(circle.attr('id'));
+        }
+
+        this.start = function() {
+            relateCircles();
+        }
+
+        this.stop = function() {
+            unrelateCircles();
+        }
+
+        return this;
+    }
+
+    function Indicator(circles) {
+
+        this.start = function() {
+            startAnimate(500);
+        }
+
+        this.stop = function() {
+            stopAnimate(500);
+        }
+
+        function startAnimate(interval) {
+            getCircleSet().forEach(function(circle) {
+                animateCircle(circle, interval, true);
+            });
+        }
+
+        function stopAnimate(interval) {
+            getCircleSet().forEach(function(circle) {
+                circle.stop();
+                animateCircle(circle, interval);
+            });
+        }
+
+        function animateCircle(circle, interval, isendless) {
+            circle.animate({ 
+                r: 0
+            }, interval, mina.easein, 
+            function() {
+                circle.animate({
+                    r: BUTTON_RADIUS
+                }, interval, mina.easein, isendless?
+                function() {
+                    animateCircle(circle, interval, isendless);
+                } : null);
+            });
+        }
+        return this;
+    }   
+
     function drawCircle(cx, cy, id) {
         s.circle(cx, cy, BUTTON_RADIUS).attr({
             fill: "white",
@@ -150,15 +229,7 @@ function Circles(s) {
             stroke: "black",
             strokeWidth: 2
         });
-    }
-
-    function placeCirclesDown(interval) {
-        placeCircles(
-            width/2, 
-            height - BUTTON_RADIUS - BUTTON_DISTANCE,
-            interval
-        );
-    }
+    } 
 
     function placeCircles(x, y, interval) {
         var set = getCircleSet();
@@ -177,38 +248,12 @@ function Circles(s) {
         });
     }
 
-    function relateCircles() {
-       getCircleSet().forEach(function(circle){
-            circle.hover(hover);
-       });
-       var selectedId = images.selected().attr('id');
-       selectCircle(getCircleById(selectedId));
-    }
-
-    function unrelateCircles() {
-        getCircleSet().forEach(function(circle){
-            circle.unhover(hover);
-       });
-       var selected = getSelectedCircle();
-       if (selected)
-            selected.toggleClass(SELECTED_CLASS, false);
-    }
-
-    function hover() {
-        selectByCircle(this); 
-    }
-
-    function startAnimate(interval) {
-        getCircleSet().forEach(function(circle) {
-            animateCircle(circle, interval, true);
-        });
-    }
-
-    function stopAnimate(interval) {
-        getCircleSet().forEach(function(circle) {
-            circle.stop();
-            animateCircle(circle, interval);
-        });
+    function placeCirclesDown(interval) {
+        placeCircles(
+            width/2, 
+            height - BUTTON_RADIUS - BUTTON_DISTANCE,
+            interval
+        );
     }
 
     function getCircleSet() {
@@ -220,26 +265,7 @@ function Circles(s) {
     }
 
     function getSelectedCircle() {
-        return s.select(CIRCLE_TAG + cssClass(SELECTED_CLASS));
-    }
-
-    function selectByCircle(circle) {
-        selectCircle(circle);
-        images.selectById(circle.attr('id'));
-    }
-
-    function animateCircle(circle, interval, isendless) {
-        circle.animate({ 
-            r: 0
-        }, interval, mina.easein, 
-        function() {
-            circle.animate({
-                r: BUTTON_RADIUS
-            }, interval, mina.easein, isendless?
-            function() {
-                animateCircle(circle, interval, isendless);
-            } : null);
-        });
+            return s.select(CIRCLE_TAG + cssClass(SELECTED_CLASS));
     }
 
     function selectCircle(circle) {
@@ -250,15 +276,15 @@ function Circles(s) {
     }
 
     this.asIndicator = function() {
-        unrelateCircles();
-        startAnimate(500);
+        sw.stop();
         placeCircles(width/2, height/2, 500);
+        indicator.start();
     }
 
     this.asSwitch = function() {
-        stopAnimate(500);
-        relateCircles();
-        placeCirclesDown(height, width, 500);
+        indicator.stop();
+        placeCirclesDown(500)
+        sw.start();
     }
 }
 
