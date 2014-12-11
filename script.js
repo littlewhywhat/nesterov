@@ -1,23 +1,30 @@
-var SVG_ID = "content",
+var SVG_ID = "#content",
     SELECTED_CLASS = "selected",
     height = document.body.clientHeight,
     width = document.body.clientWidth,
     IMAGE_IDS = ["zero", "one", "two"];
 
-var s = Snap(formId(SVG_ID));
+var s = Snap(SVG_ID);
 var interval = 500;
     imageInterval = 4000;
 
 var images;
 var cover;
 var circles;
-function Images(s, g, IMAGE_IDS) {
-    var IMAGE_TAG = "image",
+function Images(s, IMAGE_IDS) {
+    var TAG = "image",
+        GID = "images",
         instance = this;
     this.init = function() {
+        g(GID);
+        return instance;       
+    }
+
+    this.draw = function() {
+        var g = getGById(GID);
         for (var i = 0, len = IMAGE_IDS.length; 
                         i < len; i++)
-            createImage(IMAGE_IDS[i], null);
+            g.append(createImage(IMAGE_IDS[i], null));
         return instance;
     }
 
@@ -57,11 +64,8 @@ function Images(s, g, IMAGE_IDS) {
     }
 
     function selectImage(image) {
-        var selected = instance.selected();
-        if (selected)
-            toggleSelected(selected);
-        g.append(image);
-        toggleSelected(image);
+        select(image, instance.selected());
+        getGById(GID).append(image);
     }   
 
     function getImageURL(id) {
@@ -69,15 +73,15 @@ function Images(s, g, IMAGE_IDS) {
     }
 
     function getImageSet() {
-        return s.selectAll(IMAGE_TAG);
+        return getAll(TAG);
     }
 
     function getImageById(id) {
-        return s.select(IMAGE_TAG + formId(id));
+        return getById(TAG, id);
     }
 
     this.selected = function() {
-        return s.select(IMAGE_TAG + cssClass(SELECTED_CLASS));
+        return getSelected(TAG);
     }
 
     this.selectById = function(id) {
@@ -86,14 +90,21 @@ function Images(s, g, IMAGE_IDS) {
 }
 
 function Cover(s) {
-    var COVER_ID = "cover";
+    var ID = "cover",
+        GID = "cover",
+        TAG = "rect";
     this.init = function() {
-        drawCover(width + 100, height + 100);
+        g(GID);
+        return this;
+    }
+
+    this.draw = function() {
+        getGById(ID).append(drawCover(width + 100, height + 100));
         return this;
     }
 
     function getCover() {
-        return s.select(formId(COVER_ID));
+        return getById(TAG, ID);
     }
 
     this.open = function() {
@@ -122,26 +133,28 @@ function Cover(s) {
     function drawCover(width, height) {
         return s.rect(0,0,width,height)
                 .attr({
-                    id: COVER_ID
+                    id: ID
                 });
     }
 }
 
 function Circles(s) {
-    var CIRCLE_TAG = "circle",
-        CIRCLES_ID = "circles",
-        BUTTON_RADIUS = 10,
-        BUTTON_DISTANCE = 5,
+    var TAG = "circle",
+        GID = "circles",
+        RADIUS = 10,
+        DISTANCE = 5,
         instance = this,
         sw = new Switch(this),
         indicator = new Indicator(this);
-    this.init = function() {
+    this.init = function() {     
+        g(GID);
+        return this;
+    }
+
+    this.draw = function() {
+        var g = getGById(GID);
         for (var i in IMAGE_IDS) 
-            drawCircle(0, 0, IMAGE_IDS[i]);
-        s.g(getCircleSet())
-         .attr({
-             id: CIRCLES_ID
-         });
+            g.append(drawCircle(0, 0, IMAGE_IDS[i]));
         return this;
     }
 
@@ -158,9 +171,9 @@ function Circles(s) {
             getCircleSet().forEach(function(circle){
                 circle.unhover(hover);
            });
-           var selected = getSelectedCircle();
-           if (selected)
-                selected.toggleClass(SELECTED_CLASS, false);
+            var selected = circles.selected();
+            if (selected)
+                unselect(selected);
         }
 
         function hover() {
@@ -212,7 +225,7 @@ function Circles(s) {
             }, interval, mina.easein, 
             function() {
                 circle.animate({
-                    r: BUTTON_RADIUS
+                    r: RADIUS
                 }, interval, mina.easein, isendless?
                 function() {
                     animateCircle(circle, interval, isendless);
@@ -223,67 +236,64 @@ function Circles(s) {
     }   
 
     function drawCircle(cx, cy, id) {
-        s.circle(cx, cy, BUTTON_RADIUS).attr({
-            fill: "white",
-            id: id,
-            stroke: "black",
-            strokeWidth: 2
-        });
+        return s.circle(cx, cy, RADIUS).attr({
+                    fill: "white",
+                    id: id,
+                    stroke: "black",
+                    strokeWidth: 2
+                });
     } 
 
-    function placeCircles(x, y, interval) {
+    function move(x, y, interval) {
         var set = getCircleSet();
             count = set.length;
-        var cx = x - BUTTON_RADIUS - 
-            count * BUTTON_RADIUS
+        var cx = x - RADIUS - 
+            count * RADIUS
            + Math.round(count/2 - 0.1) 
-           * BUTTON_DISTANCE;
+           * DISTANCE;
         var cy = y;
         set.forEach(function(circle) {
             circle.animate({
                 cx: cx,
                 cy: cy
             }, interval);
-            cx += BUTTON_RADIUS * 2 + BUTTON_DISTANCE;
+            cx += RADIUS * 2 + DISTANCE;
         });
     }
 
-    function placeCirclesDown(interval) {
-        placeCircles(
+    function moveDown(interval) {
+        move(
             width/2, 
-            height - BUTTON_RADIUS - BUTTON_DISTANCE,
+            height - RADIUS - DISTANCE,
             interval
         );
     }
 
     function getCircleSet() {
-        return s.selectAll(CIRCLE_TAG);
+        return getAll(TAG);
     }
 
     function getCircleById(id) {
-        return s.select(CIRCLE_TAG + formId(id));
+        return getById(TAG, id);
     }
 
-    function getSelectedCircle() {
-            return s.select(CIRCLE_TAG + cssClass(SELECTED_CLASS));
+    this.selected = function() {
+        return getSelected(TAG);
     }
 
     function selectCircle(circle) {
-        var selected = getSelectedCircle();
-        if (selected)
-            toggleSelected(selected);
-        toggleSelected(circle);
+        select(circle, instance.selected());
     }
 
     this.asIndicator = function() {
         sw.stop();
-        placeCircles(width/2, height/2, 500);
+        move(width/2, height/2, 500);
         indicator.start();
     }
 
     this.asSwitch = function() {
         indicator.stop();
-        placeCirclesDown(500)
+        moveDown(500)
         sw.start();
     }
 }
@@ -300,11 +310,7 @@ doInARow([{
 }]);
 
 function load(IMAGE_IDS) {
-    var g = s.g().attr({
-                    id: "images"
-                 });
-    cover.before(g);
-    images = new Images(s, g, IMAGE_IDS).init();
+    images.draw();
 }
 
 function doInARow(callbacks) {
@@ -321,8 +327,9 @@ function doInARow(callbacks) {
 }
 
 function hide() {
-    cover = new Cover(s).init();
-    circles = new Circles(s).init();    
+    images = new Images(s, IMAGE_IDS).init();
+    cover = new Cover(s).init().draw();
+    circles = new Circles(s).init().draw();    
     circles.asIndicator();
 }
 
@@ -331,16 +338,34 @@ function unhide() {
     cover.open(); 
 }
 
-function formId(id) {
-    return "#" + id;
+function getAll(css) {
+    return s.selectAll(css);
 }
 
-function cssClass(className) {
-    return "." + className;
+function getGById(id) {
+    return getById("g", id);
 }
 
-function toggleSelected(element) {
-    element.toggleClass(SELECTED_CLASS);
+function g(id) {
+    s.g().attr({ id: id });
+}
+
+function getById(css, id) {
+    return s.select(css + "#" + id);
+}
+
+function getSelected(css) {
+    return s.select(css + "." + SELECTED_CLASS);
+}
+
+function select(element, selected) {
+    if (selected)
+        unselect(selected);
+    element.toggleClass(SELECTED_CLASS, true);
+}
+
+function unselect(element) {
+    element.toggleClass(SELECTED_CLASS, false);
 }
 
 var startMillis;
