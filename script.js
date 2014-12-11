@@ -152,7 +152,7 @@ function Circles(s) {
         });
     }
 
-    function placeCirclesDown(height, width, interval) {
+    function placeCirclesDown(interval) {
         placeCircles(
             width/2, 
             height - BUTTON_RADIUS - BUTTON_DISTANCE,
@@ -179,9 +179,7 @@ function Circles(s) {
 
     function relateCircles() {
        getCircleSet().forEach(function(circle){
-            circle.hover(function() {
-                selectByCircle(this); 
-            }, function() {});
+            circle.hover(hover);
        });
        var selectedId = images.selected().attr('id');
        selectCircle(getCircleById(selectedId));
@@ -189,13 +187,15 @@ function Circles(s) {
 
     function unrelateCircles() {
         getCircleSet().forEach(function(circle){
-            circle.unhover(function() {
-                selectByCircle(this); 
-            }, function() {});
+            circle.unhover(hover);
        });
        var selected = getSelectedCircle();
        if (selected)
             selected.toggleClass(SELECTED_CLASS, false);
+    }
+
+    function hover() {
+        selectByCircle(this); 
     }
 
     function startAnimate(interval) {
@@ -273,7 +273,7 @@ doInARow([{
     todo: hide
 }]);
 
-function load(IMAGE_IDS, time) {
+function load(IMAGE_IDS) {
     var g = s.g().attr({
                     id: "images"
                  });
@@ -285,22 +285,22 @@ function doInARow(callbacks) {
     if (callbacks.length > 0) {
         var callback = callbacks.pop();
         if (callback.args)
-            callback.todo(callback.args, callback.time);
+            callback.todo(callback.args);
         else
-            callback.todo(callback.time);
+            callback.todo();
         window.setTimeout(function() {
             doInARow(callbacks);
         }, callback.time)
     }
 }
 
-function hide(interval) {
+function hide() {
     cover = new Cover(s).init();
     circles = new Circles(s).init();    
     circles.asIndicator();
 }
 
-function unhide(interval) {
+function unhide() {
     circles.asSwitch();
     cover.open(); 
 }
