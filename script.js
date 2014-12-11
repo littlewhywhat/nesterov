@@ -8,9 +8,9 @@ var s = Snap(SVG_ID);
 var interval = 500;
     imageInterval = 4000;
 
-var images;
-var cover;
-var circles;
+var images = new Images(s, IMAGE_IDS).init(),
+    cover = new Cover(s).init().draw(),
+    circles = new Circles(s).init().draw();  
 function Images(s, IMAGE_IDS) {
     var TAG = "image",
         GID = "images",
@@ -144,7 +144,7 @@ function Circles(s) {
         RADIUS = 10,
         DISTANCE = 5,
         instance = this,
-        sw = new Switch(this),
+        sw = new Switch(this, images),
         indicator = new Indicator(this);
     this.init = function() {     
         g(GID);
@@ -158,39 +158,41 @@ function Circles(s) {
         return this;
     }
 
-    function Switch(circles) {
-        function relateCircles() {
-           getCircleSet().forEach(function(circle){
-                circle.hover(hover);
-           });
-           var selectedId = images.selected().attr('id');
-           selectCircle(getCircleById(selectedId));
+    function Switch(byselects, toselects) {
+        function relate() {
+            byselects.selectSet()
+                  .forEach(function(byselect){
+                      byselect.hover(hover);
+                  });
+            var selectedId = toselects.selected().attr('id');
+            byselects.selectById(selectedId);
         }
 
-        function unrelateCircles() {
-            getCircleSet().forEach(function(circle){
-                circle.unhover(hover);
-           });
-            var selected = circles.selected();
+        function unrelate() {
+            byselects.selectSet()
+                  .forEach(function(byselect){
+                      byselect.unhover(hover);
+                  });
+            var selected = byselects.selected();
             if (selected)
                 unselect(selected);
         }
 
         function hover() {
-            selectByCircle(this); 
+            selectBoth(this.attr('id')); 
         }
 
-        function selectByCircle(circle) {
-            selectCircle(circle);
-            images.selectById(circle.attr('id'));
+        function selectBoth(id) {
+            byselects.selectById(id);
+            toselects.selectById(id);
         }
 
         this.start = function() {
-            relateCircles();
+            relate();
         }
 
         this.stop = function() {
-            unrelateCircles();
+            unrelate();
         }
 
         return this;
@@ -207,13 +209,13 @@ function Circles(s) {
         }
 
         function startAnimate(interval) {
-            getCircleSet().forEach(function(circle) {
+            circles.selectSet().forEach(function(circle) {
                 animateCircle(circle, interval, true);
             });
         }
 
         function stopAnimate(interval) {
-            getCircleSet().forEach(function(circle) {
+            circles.selectSet().forEach(function(circle) {
                 circle.stop();
                 animateCircle(circle, interval);
             });
@@ -245,7 +247,7 @@ function Circles(s) {
     } 
 
     function move(x, y, interval) {
-        var set = getCircleSet();
+        var set = instance.selectSet();
             count = set.length;
         var cx = x - RADIUS - 
             count * RADIUS
@@ -269,7 +271,7 @@ function Circles(s) {
         );
     }
 
-    function getCircleSet() {
+    this.selectSet = function() {
         return getAll(TAG);
     }
 
@@ -281,8 +283,8 @@ function Circles(s) {
         return getSelected(TAG);
     }
 
-    function selectCircle(circle) {
-        select(circle, instance.selected());
+    this.selectById = function(id) {
+        select(getCircleById(id), instance.selected());
     }
 
     this.asIndicator = function() {
@@ -326,10 +328,8 @@ function doInARow(callbacks) {
     }
 }
 
-function hide() {
-    images = new Images(s, IMAGE_IDS).init();
-    cover = new Cover(s).init().draw();
-    circles = new Circles(s).init().draw();    
+function hide() {  
+    cover.close();
     circles.asIndicator();
 }
 
@@ -376,16 +376,14 @@ document.body.onresize = function() {
     width = document.body.clientWidth;
        
     cover.adjust();
-    cover.close();
-    circles.asIndicator();
+    hide();
     
     var currentMillis = new Date().getTime();
     if ((currentMillis - startMillis) < 300)
         clearTimeout(timerId);
     timerId = setTimeout(function() {
-        cover.open();
         images.adjust();
-        circles.asSwitch();
+        unhide();
     }, 1000);
     startMillis = currentMillis;
 }
