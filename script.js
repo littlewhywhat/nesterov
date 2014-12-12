@@ -5,7 +5,7 @@ var SVG_ID = "#content",
     IMAGE_IDS = ["zero", "one", "two"];
 
 var s = Snap(SVG_ID);
-var interval = 500;
+var animInterval = 500;
     imageInterval = 4000;
 
 var images = new Images(s, IMAGE_IDS).init(),
@@ -24,11 +24,11 @@ function Images(s, IMAGE_IDS) {
         var g = getGById(GID);
         for (var i = 0, len = IMAGE_IDS.length; 
                         i < len; i++)
-            g.append(createImage(IMAGE_IDS[i], null));
+            g.append(createImage(IMAGE_IDS[i]));
         return instance;
     }
 
-    function createImage(image, interval) {
+    function createImage(image) {
         var image = drawImage(image);
         adjustImage(image, width, height);
         selectImage(image);
@@ -99,8 +99,18 @@ function Cover(s) {
     }
 
     this.draw = function() {
-        getGById(ID).append(drawCover(width + 100, height + 100));
+        getGById(ID).append(
+            drawCover(getWidth(), getHeight())
+        );
         return this;
+    }
+
+    function getWidth() {
+        return width + 100;
+    }
+
+    function getHeight() {
+        return height + 100;
     }
 
     function getCover() {
@@ -110,7 +120,7 @@ function Cover(s) {
     this.open = function() {
         getCover().animate({
             opacity: 0
-        }, 500);
+        }, animInterval);
     }
 
     this.close = function() {
@@ -121,8 +131,8 @@ function Cover(s) {
 
     this.adjust = function() {
         getCover().attr({
-            width: width + 100,
-            height: height + 100
+            width: getWidth(),
+            height: getHeight()
         });
     }
 
@@ -169,8 +179,9 @@ function Circles(s) {
                   .forEach(function(byselect){
                       byselect.hover(hover);
                   });
-            var selectedId = toselects.selected().attr('id');
-            byselects.selectById(selectedId);
+            var selected = toselects.selected();
+            if (selected)
+                byselects.selectById(selected.attr('id'));
         }
 
         function unrelate() {
@@ -206,11 +217,11 @@ function Circles(s) {
     function Animator(elements, to, from) {
 
         this.start = function() {
-            start(500);
+            start(animInterval);
         }
 
         this.stop = function() {
-            stop(500);
+            stop(animInterval);
         }
 
         function start(interval) {
@@ -289,39 +300,36 @@ function Circles(s) {
 
     this.asIndicator = function() {
         sw.stop();
-        move(width/2, height/2, 500);
+        move(width/2, height/2, animInterval);
         animator.start();
     }
 
     this.asSwitch = function() {
         animator.stop();
-        moveDown(500)
+        moveDown(animInterval)
         sw.start();
     }
 }
 
 doInARow([{ 
-    time: interval, 
+    time: animInterval, 
     todo: unhide 
 }, { 
     time: imageInterval , 
-    todo: load, args: IMAGE_IDS 
+    todo: load 
 }, { 
-    time: interval, 
+    time: animInterval, 
     todo: hide
 }]);
 
-function load(IMAGE_IDS) {
+function load() {
     images.draw();
 }
 
 function doInARow(callbacks) {
     if (callbacks.length > 0) {
         var callback = callbacks.pop();
-        if (callback.args)
-            callback.todo(callback.args);
-        else
-            callback.todo();
+        callback.todo();
         window.setTimeout(function() {
             doInARow(callbacks);
         }, callback.time)
