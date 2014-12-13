@@ -21,17 +21,21 @@ function Images(s, IMAGE_IDS) {
     }
 
     this.draw = function() {
-        var g = getGById(GID);
+        var image;
         for (var i = 0, len = IMAGE_IDS.length; 
                         i < len; i++)
-            g.append(createImage(IMAGE_IDS[i]));
+            image = appendImage(IMAGE_IDS[i]);
+        selectImage(image);
+        center();
         return instance;
     }
 
-    function createImage(image) {
-        var image = drawImage(image);
-        adjustImage(image, width, height);
-        selectImage(image);
+    function appendImage(image) {
+        var image = drawImage(image),
+            g = getGById(GID);
+        g.append(image);
+        adjustImage(image);
+        return image;
     }
 
     function drawImage(image) {
@@ -41,26 +45,32 @@ function Images(s, IMAGE_IDS) {
                      });
     }
 
-    function adjustImage(image, width, height) {
-        var rate = width/height;
-        var adjheight = height;
-        var adjwidth = width;
+    function adjustImage(image) {
+        var rate = width/height,
+            adjheight = height,
+            adjwidth = width;
         if (rate > 2)
-            adjheight = adjwidth /2;
-        if (rate < 2)
+            adjheight = adjwidth/2;
+        else if (rate < 2)
             adjwidth = adjheight * 2;
         image.attr({
             height: adjheight,
             width: adjwidth
         });
-        var center = width/2 - adjwidth/2;
-        image.transform("t" + [center, 0]);
     }
 
     this.adjust = function() {
         getImageSet().forEach(function(image) {
-            adjustImage(image, width, height);
+            adjustImage(image);
         })
+        center();
+    }
+
+    function center() {
+        var adjwidth = instance.selected().getBBox().w,
+            center = width/2 - adjwidth/2,
+            g = getGById(GID);
+        g.transform("t" + [center, 0]);
     }
 
     function selectImage(image) {
