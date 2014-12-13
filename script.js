@@ -191,7 +191,9 @@ function Circles(s) {
     } 
 
     function Switch(byselects, toselects) {
+        var isStarted = false;
         function relate() {
+            isStarted = true;
             byselects.selectSet()
                   .forEach(function(byselect){
                       byselect.hover(hover);
@@ -199,9 +201,11 @@ function Circles(s) {
             var selected = toselects.selected();
             if (selected)
                 byselects.selectById(selected.attr('id'));
+
         }
 
         function unrelate() {
+            isStarted = false;
             byselects.selectSet()
                   .forEach(function(byselect){
                       byselect.unhover(hover);
@@ -221,37 +225,46 @@ function Circles(s) {
         }
 
         this.start = function() {
-            relate();
+            if (!isStarted)
+                relate();
         }
 
         this.stop = function() {
-            unrelate();
+            if (isStarted)
+                unrelate();
         }
 
         return this;
     }
 
     function Animator(elements, to, from) {
-
+        var isStarted = false;
         this.start = function() {
-            start(animInterval);
+            if (!isStarted)
+                start(animInterval);
         }
 
         this.stop = function() {
-            stop(animInterval);
+            if (isStarted)
+                stop(animInterval);
         }
 
         function start(interval) {
+            isStarted = true;
             elements.forEach(function(element) {
                 animate(element, interval);
             });
         }
 
         function stop(interval) {
-            elements.forEach(function(element) {
+            var set = instance.selectSet();
+            for (var i = 0, len = set.length;
+                            i < len; i++) {
+                var element = set.pop();
                 element.stop();
-            });
-            elements.animate(from, interval, mina.easein);
+                element.animate(from, interval, mina.easein);
+            }
+            isStarted = false;
         }
 
         function animate(element, interval) {
@@ -399,7 +412,7 @@ function unselect(element) {
 document.body.onresize = function() {
     height = document.body.clientHeight;
     width = document.body.clientWidth;
-       
+
     cover.adjust();
     hide();
     
