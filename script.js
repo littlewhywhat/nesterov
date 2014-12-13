@@ -162,9 +162,9 @@ function Circles(s) {
     }
 
     this.draw = function() {
-        var g = getGById(GID);
-        for (var i in IMAGE_IDS) 
-            g.append(drawCircle(0, 0, IMAGE_IDS[i]));
+        for (var i = 0, len = IMAGE_IDS.length; 
+                        i < len; i++) 
+            appendCircle(IMAGE_IDS[i]);
         animator = new Animator(instance.selectSet(),{
                     r: 0
                 }, {
@@ -172,6 +172,13 @@ function Circles(s) {
                 });
         return this;
     }
+
+    function appendCircle(id) {
+        var g = getG(),
+            len = instance.selectSet().length,
+            cx = len * (RADIUS * 2 + DISTANCE);
+        g.append(drawCircle(cx, 0, id));
+    } 
 
     function Switch(byselects, toselects) {
         function relate() {
@@ -257,29 +264,28 @@ function Circles(s) {
                 });
     } 
 
-    function move(x, y, interval) {
-        var set = instance.selectSet();
-            count = set.length;
-        var cx = x - RADIUS - 
-            count * RADIUS
-           + Math.round(count/2 - 0.1) 
-           * DISTANCE;
-        var cy = y;
-        set.forEach(function(circle) {
-            circle.animate({
-                cx: cx,
-                cy: cy
-            }, interval);
-            cx += RADIUS * 2 + DISTANCE;
-        });
+    function move(x, y) {
+        var g = getG(),
+            bbox = g.getBBox(),
+            gcx = bbox.w/2,
+            gcy = bbox.h/2,
+            tx = x - gcx + RADIUS,
+            ty = y - gcy;
+        g.animate({
+            transform: 't' + [tx, ty]
+        }, animInterval);
     }
 
-    function moveDown(interval) {
-        move(
-            width/2, 
-            height - RADIUS - DISTANCE,
-            interval
-        );
+    function getG() {
+        return getGById(GID);
+    }
+
+    function moveDown() {
+        move(width/2, height - RADIUS - DISTANCE);
+    }
+
+    function moveCenter() {
+        move(width/2, height/2);
     }
 
     this.selectSet = function() {
@@ -300,13 +306,13 @@ function Circles(s) {
 
     this.asIndicator = function() {
         sw.stop();
-        move(width/2, height/2, animInterval);
+        moveCenter();
         animator.start();
     }
 
     this.asSwitch = function() {
         animator.stop();
-        moveDown(animInterval)
+        moveDown()
         sw.start();
     }
 }
