@@ -392,8 +392,9 @@ function unselect(element) {
     element.toggleClass(SELECTED_CLASS, false);
 }
 
-var startMillis;
-var timerId;
+{var startMillis = new Date().getTime(),
+     timerId,
+     wait = 500;
 
 document.body.onresize = function() {
     height = document.body.clientHeight;
@@ -403,11 +404,11 @@ document.body.onresize = function() {
     hide();
     
     var currentMillis = new Date().getTime();
-    if ((currentMillis - startMillis) < 300)
+    if ((currentMillis - startMillis) < wait)
         clearTimeout(timerId);
     timerId = setTimeout(function() {
         images.adjust();
         unhide();
-    }, 1000);
+    }, wait);
     startMillis = currentMillis;
-}
+}}
